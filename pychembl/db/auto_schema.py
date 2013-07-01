@@ -57,11 +57,6 @@ class AssayType(object):
 	pass
 
 
-assay2target_table = Table('assay2target', metadata, autoload=True)
-class Assay2Target(object):
-	pass
-
-
 target_dictionary_table = Table('target_dictionary', metadata, autoload=True)
 class TargetDictionary(object):
 	pass
@@ -79,11 +74,6 @@ class ConfidenceScoreLookup(object):
 
 relationship_type_table = Table('relationship_type', metadata, autoload=True)
 class RelationshipType(object):
-	pass
-
-
-target_class_table = Table('target_class', metadata, autoload=True)
-class TargetClass(object):
 	pass
 
 
@@ -107,16 +97,6 @@ class ChEMBLIDLookup(object):
 	pass
 
 
-protein_therapeutics_table = Table('protein_therapeutics', metadata, autoload=True)
-class ProteinTherapeutics(object):
-	pass
-
-
-research_codes_table = Table('research_codes', metadata, autoload=True)
-class ResearchCodes(object):
-	pass
-
-
 version_table = Table('version', metadata, autoload=True)
 class Version(object):
 	pass
@@ -131,6 +111,14 @@ define_daily_dose_table = Table('defined_daily_dose', metadata, autoload=True)
 class DefinedDailyDoseTable(object):
 	pass
 
+component_sequences_table = Table('component_sequences', metadata, autoload=True)
+class ComponentSequences(object):
+	pass
+
+target_components_table = Table('target_components', metadata, autoload=True)
+class TargetComponents(object):
+	pass
+
 ####
 
 mapper(Activities, activities_table)
@@ -142,15 +130,15 @@ mapper(CompoundProperties, compound_properties_table)
 mapper(MoleculeSynonyms, molecule_synonyms_table)
 
 mapper(MoleculeHierarchy, molecule_hierarchy_table, properties={
-	'molecule': relationship(MoleculeDictionary, 
+	'molecule': relationship(MoleculeDictionary,
 		primaryjoin=molecule_hierarchy_table.c.molregno==molecule_dictionary_table.c.molregno,
-		backref=backref('hierarchy', uselist=False) 
+		backref=backref('hierarchy', uselist=False)
 	),
-	'parent': relationship(MoleculeDictionary, 
+	'parent': relationship(MoleculeDictionary,
 		primaryjoin=molecule_hierarchy_table.c.parent_molregno==molecule_dictionary_table.c.molregno,
 		backref='children'
 	),
-	'active': relationship(MoleculeDictionary, 
+	'active': relationship(MoleculeDictionary,
 		primaryjoin=molecule_hierarchy_table.c.active_molregno==molecule_dictionary_table.c.molregno,
 		backref='base_forms'
 	),
@@ -189,35 +177,21 @@ mapper(Source, source_table, properties = {
 
 mapper(Assays, assays_table, properties = {
 	'activities': relationship(Activities, backref='assays'),
-	'targets': relationship(TargetDictionary, secondary=assay2target_table, backref='assays'),
-	'target_associations': relationship(Assay2Target, collection_class=attribute_mapped_collection('target')),
 	'type': relationship(AssayType, backref='assays')
-})
-
-mapper(Assay2Target, assay2target_table, properties = {
-	'assays': relationship(Assays, backref='assay2target'),
-	'targets': relationship(TargetDictionary, backref='assay2target'),
 })
 
 mapper(AssayType, assay_type_table)
 
 mapper(TargetDictionary, target_dictionary_table, properties={
-	'classes': relationship(TargetClass, backref='target')
+	'assays' : relationship(Assays),
+	'components' : relationship(TargetComponents)
 })
 
-mapper(CurationLookup, curation_lookup_table, properties={
-    'assay2target': relationship(Assay2Target, backref='curator', primaryjoin=curation_lookup_table.c.curated_by==assay2target_table.c.curated_by, foreign_keys=[curation_lookup_table.c.curated_by])
-})
+mapper(CurationLookup, curation_lookup_table)
 
-mapper(ConfidenceScoreLookup, confidence_score_lookup_table, properties={
-	'assay2target': relationship(Assay2Target, backref='confidence_score_description')
-})
+mapper(ConfidenceScoreLookup, confidence_score_lookup_table)
 
-mapper(RelationshipType, relationship_type_table, properties={
-	'assay2target': relationship(Assay2Target, backref='relationship')
-})
-
-mapper(TargetClass, target_class_table)
+mapper(RelationshipType, relationship_type_table)
 
 mapper(TargetType, target_type_table, properties={
 	'targets': relationship(TargetDictionary, backref='type')
@@ -231,10 +205,12 @@ mapper(ChEMBLIDLookup, chembl_id_lookup_table, properties ={
 
 })
 
-mapper(ProteinTherapeutics, protein_therapeutics_table)
-
-mapper(ResearchCodes, research_codes_table)
-
 mapper(ATCClassification, atc_classification_table)
 
 mapper(DefinedDailyDoseTable, define_daily_dose_table)
+
+mapper(ComponentSequences, component_sequences_table)
+
+mapper(TargetComponents, target_components_table, properties = {
+	'sequence' : relationship(ComponentSequences)
+})
